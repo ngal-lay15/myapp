@@ -11,7 +11,6 @@ const Home = ({params}) => (
       <p>Discover our delicious menu and great atmosphere.</p>
       {params.id}
     </main>
-    <Footer />
   </div>
 );
 

@@ -7,33 +7,46 @@ import '../../../globals.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useCart } from '../../../CartContext';
 import { useEffect, useState } from "react";
-
 import { db } from "../../firebaseConfig";
-import { collection,onSnapshot } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 
-function useFirestoreCollection(collectionName) {
+// Custom hook to retrieve data from a subcollection
+function useFirestoreSubcollection(parentCollection, parentId, subcollectionName) {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const collectionRef = collection(db, collectionName);
+    const parentDocRef = doc(db, parentCollection, parentId); // Reference to the parent document
+    const subcollectionRef = collection(parentDocRef, subcollectionName); // Reference to the subcollection
 
-    const unsubscribe = onSnapshot(collectionRef, (snapshot) => {
-      const fetchedData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setData(fetchedData);
-    });
+    // Create a query to order by createdAt
+    const orderedQuery = query(subcollectionRef, orderBy('createdAt', 'asc'));
+
+    const unsubscribe = onSnapshot(
+      orderedQuery,
+      (snapshot) => {
+        const fetchedData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setData(fetchedData);
+        setLoading(false);
+      },
+      (error) => {
+        setError(error.message);
+        setLoading(false);
+      }
+    );
 
     // Cleanup listener on unmount
     return () => unsubscribe();
-  }, [collectionName]);
+  }, [parentCollection, parentId, subcollectionName]);
 
-  return data;
+  return { data, loading, error };
 }
 
-const Home = ({params}) =>{
-
+const Home = ({ params }) => {
   const styles = {
     container: {
       display: 'flex',
@@ -63,45 +76,53 @@ const Home = ({params}) =>{
     },
   };
 
-  const {dispatch } = useCart();
+  const { dispatch } = useCart();
+
+  // Retrieve data from subcollection "products" under document "1"
+  const { data: itemData, loading, error } = useFirestoreSubcollection("1", "products", "items");
 
   const addToCart = (item) => {
     dispatch({ type: 'ADD_ITEM', payload: item });
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  const itemData = useFirestoreCollection("messages");
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
- return (
-  <div>
-    <Header params={params.id}/>
-    <main>
+  return (
     <div>
-      <ul>
-      <div style={styles.container}>
-      {itemData.map((item) => (
-        <div key={item.id} style={styles.card}>
-           {item.imageUrl && (
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              style={styles.image}
-            />
-          )}
-          <h3>{item.name}</h3>
-          <p>{item.price} Kyats</p>
-          <button onClick={() => addToCart(item)} style={styles.button}>
-            Add to Cart
-          </button>
+      <Header params={params.id} />
+      <main>
+        <div>
+          <ul>
+            <div style={styles.container}>
+              {itemData.map((item) => (
+                <div key={item.id} style={styles.card}>
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      style={styles.image}
+                    />
+                  )}
+                  <h3>{item.name}</h3>
+                  <p>{item.price} Kyats</p>
+                  <button onClick={() => addToCart(item)} style={styles.button}>
+                    Add to Cart
+                  </button>
+                </div>
+              ))}
+            </div>
+          </ul>
         </div>
-      ))}
+      </main>
+      <Footer />
     </div>
-      </ul>
-    </div> 
-    </main>
-  </div>
-);
-
-}
+  );
+};
 
 export default Home;
