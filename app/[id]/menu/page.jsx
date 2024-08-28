@@ -52,6 +52,7 @@ const Home = ({ params }) => {
       display: 'flex',
       flexWrap: 'wrap',
       gap: '16px',
+      marginTop: '80px', // Ensure content does not hide behind the fixed header
     },
     card: {
       border: '1px solid #ddd',
@@ -78,8 +79,8 @@ const Home = ({ params }) => {
 
   const mobileStyles = {
     image: {
-      width: '60px', // smaller width for mobile
-      height: '50px', // smaller height for mobile
+      width: '80px', // smaller width for mobile
+      height: '60px', // smaller height for mobile
     },
     button: {
       marginTop: '8px',
@@ -91,6 +92,7 @@ const Home = ({ params }) => {
       cursor: 'pointer',
       fontSize:'5px'
     },
+    p:{ fontSize:'2px' }
   };
 
   const { dispatch } = useCart();
@@ -112,13 +114,13 @@ const Home = ({ params }) => {
 
   return (
     <div>
-      <Header params={params.id} />
-      <main>
+      <Header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1000 }} params={params.id} />
+      <main style={{marginTop:'70px'}}>
         <div>
           <ul>
-            <div style={styles.container}>
+            <div style={styles.container} >
               {itemData.map((item) => (
-                <div key={item.id} style={styles.card}>
+                <div key={item.id} style={styles.card} >
                   {item.imageUrl && (
                     <img
                       src={item.imageUrl}

@@ -6,10 +6,9 @@ import Footer from '../../components/Footer';
 const Home = ({params}) => (
   <div>
     <Header params={params.id}/>
-    <main>
-      <h1>Welcome to Our Restaurant</h1>
+    <main  style={{marginTop:'70px'}}>
+      <h4>htwocoder@gmai.com</h4>
       <p>Discover our delicious menu and great atmosphere.</p>
-      {params.id}
     </main>
   </div>
 );

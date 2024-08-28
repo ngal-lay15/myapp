@@ -16,24 +16,30 @@ const Header = ({ params }) => {
             </Link>
           </li>
           <li className="left-section">
-            <Link className="button-link" href={`/${params}/menu`}>Menu</Link>
+            <a style={{ fontFamily: 'Lora' }} href={`/${params}/menu`}>Menu</a>
           </li>
           <li className="left-section">
-            <Link className="button-link" href={`/${params}/contact`}>Contact</Link>
+            <a style={{ fontFamily: 'Lora' }} href={`/${params}/contact`}>Contact</a>
           </li>
           <li className="right-section">
             <Link href={`/${params}/cart`}>
-              {cart.length}
-              <img src={cartimg.src} width="50px" height="50px" alt="Cart" />
+              <div className="cart-icon">
+                <span className="cart-count">{cart.length}</span>
+                <img src={cartimg.src} width="50px" height="50px" alt="Cart" />
+              </div>
             </Link>
           </li>
         </ul>
       </nav>
       <style jsx>{`
         header {
+          position: fixed;
+          top: 0;
+          width: 100%;
           background: #333;
           color: #fff;
           padding: 1rem;
+          z-index: 1000;
         }
         nav ul {
           display: flex;
@@ -60,7 +66,30 @@ const Header = ({ params }) => {
           display: flex;
           align-items: center;
         }
+        .cart-icon {
+          position: relative;
+          display: inline-block;
+        }
+        .cart-count {
+          position: absolute;
+          top: -10px;
+          right: -10px;
+          background-color: red;
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: bold;
+        }
         @media (max-width: 768px) {
+          .button-link {
+            width: 40px;
+            height: 30px;
+          }
           header {
             padding: 0.5rem;
           }
@@ -84,18 +113,23 @@ const Header = ({ params }) => {
             justify-content: center;
           }
           nav ul li a {
-            font-size: 1.2rem; /* Increased font size for better readability */
-            padding: 10px 20px; /* Added padding to increase button size */
-            line-height: 40px; /* Ensures consistent height alignment */
+            line-height: 30px; /* Adjusted line height */
           }
           img {
             width: 40px;
             height: 40px;
           }
+          .cart-count {
+            width: 16px;
+            height: 16px;
+            font-size: 0.65rem;
+            top: -8px;
+            right: -8px;
+          }
         }
       `}</style>
     </header>
   );
-}
+};
 
 export default Header;
