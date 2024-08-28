@@ -57,12 +57,11 @@ const Home = ({ params }) => {
       border: '1px solid #ddd',
       borderRadius: '8px',
       padding: '16px',
-      width: '200px',
       textAlign: 'center',
     },
     image: {
-      width: '100%',
-      height: 'auto',
+      width: '200px',
+      height: '150px',
       borderRadius: '8px 8px 0 0',
     },
     button: {
@@ -73,6 +72,24 @@ const Home = ({ params }) => {
       border: 'none',
       borderRadius: '4px',
       cursor: 'pointer',
+      fontSize:'15px'
+    },
+  };
+
+  const mobileStyles = {
+    image: {
+      width: '60px', // smaller width for mobile
+      height: '50px', // smaller height for mobile
+    },
+    button: {
+      marginTop: '8px',
+      padding: '8px 16px',
+      backgroundColor: '#007bff',
+      color: 'white',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize:'5px'
     },
   };
 
@@ -106,10 +123,10 @@ const Home = ({ params }) => {
                     <img
                       src={item.imageUrl}
                       alt={item.name}
-                      style={styles.image}
+                      style={{ ...styles.image, ...(window.innerWidth <= 900 ? mobileStyles.image : {}) }}
                     />
                   )}
-                  <h3>{item.name}</h3>
+                  <p>{item.name}</p>
                   <p>{item.price} Kyats</p>
                   <button onClick={() => addToCart(item)} style={styles.button}>
                     Add to Cart
@@ -120,7 +137,6 @@ const Home = ({ params }) => {
           </ul>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
