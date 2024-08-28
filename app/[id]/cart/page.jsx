@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { useCart } from '../../../CartContext';
-import { collection, addDoc,serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../firebaseConfig'; // Adjust the import path based on your project structure
 
 const Home = ({ params }) => {
@@ -13,18 +13,27 @@ const Home = ({ params }) => {
   // Calculate the total price
   const totalPrice = cart.reduce((acc, item) => acc + Number(item.price), 0);
 
-  // Get user's location on component mount
   useEffect(() => {
+    // Function to continuously update location when device moves
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      }, (error) => {
-        console.error("Error getting location:", error);
-        setLocation("Location not available");
-      });
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setLocation("Location not available");
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+
+      // Cleanup the watch on unmount
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
     } else {
       setLocation("Geolocation is not supported by this browser.");
     }
@@ -72,6 +81,11 @@ const Home = ({ params }) => {
         ))}
         <div>
           <h2>Total Price: ${totalPrice.toFixed(2)}</h2>
+        </div>
+        <div>
+          {location && (
+            <p>Location: {typeof location === "string" ? location : `Lat: ${location.latitude}, Lng: ${location.longitude}`}</p>
+          )}
         </div>
         <button onClick={handleSaveOrder} disabled={loading || !location}>
           {loading ? "Saving..." : "Save Order"}
