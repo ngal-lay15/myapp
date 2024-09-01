@@ -3,7 +3,7 @@ import Link from 'next/link';
 import logo from '../../img/logo.png';
 import cartimg from '../../img/cart.png';
 import { useCart } from '../../CartContext';
-import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useRouter } from 'next/navigation';
 
@@ -15,19 +15,17 @@ const Header = ({ params }) => {
   const [isBillPaidEnabled, setIsBillPaidEnabled] = useState(false);
   const router = useRouter();
 
+  // Fetch items on mount
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const itemsCollection = collection(db, '1/products/items');
         const itemsSnapshot = await getDocs(itemsCollection);
-        const itemsList = itemsSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            name: data.name,
-            id: doc.id,
-            category: data.category
-          };
-        });
+        const itemsList = itemsSnapshot.docs.map(doc => ({
+          name: doc.data().name,
+          id: doc.id,
+          category: doc.data().category
+        }));
         setItems(itemsList);
       } catch (error) {
         console.error("Error fetching items: ", error);
@@ -37,32 +35,39 @@ const Header = ({ params }) => {
     fetchItems();
   }, []);
 
+  // Check bill status in real-time
   useEffect(() => {
-    const checkBillStatus = async () => {
-      try {
-        const orderItemsCollection = collection(db, '1/order/items');
-        const orderItemsQuery = query(orderItemsCollection, where('table', '==', params));
-        const orderItemsSnapshot = await getDocs(orderItemsQuery);
+    const orderItemsCollection = collection(db, '1/order/items');
+    const orderItemsQuery = query(orderItemsCollection, where('table', '==', params));
 
-        const deliveredItemsCollection = collection(db, '1/delivered/items');
-        const deliveredItemsQuery = query(deliveredItemsCollection, where('table', '==', params));
-        const deliveredItemsSnapshot = await getDocs(deliveredItemsQuery);
+    const deliveredItemsCollection = collection(db, '1/delivered/items');
+    const deliveredItemsQuery = query(deliveredItemsCollection, where('table', '==', params));
 
-        const billingItemsCollection = collection(db, '1/billing/items');
-        const billingItemsQuery = query(billingItemsCollection, where('table', '==', params));
-        const billingItemsSnapshot = await getDocs(billingItemsQuery);
+    const billingItemsCollection = collection(db, '1/billing/items');
+    const billingItemsQuery = query(billingItemsCollection, where('table', '==', params));
 
-        if ((!deliveredItemsSnapshot.empty || !orderItemsSnapshot.empty) && billingItemsSnapshot.empty) {
-          setIsBillPaidEnabled(true);
-        } else {
-          setIsBillPaidEnabled(false);
-        }
-      } catch (error) {
-        console.error('Error checking bill status: ', error);
-      }
-    };
+    const unsubscribeOrder = onSnapshot(orderItemsQuery, (snapshot) => {
+      const orderItemsExists = !snapshot.empty;
 
-    checkBillStatus();
+      const unsubscribeDelivered = onSnapshot(deliveredItemsQuery, (deliveredSnapshot) => {
+        const deliveredItemsExists = !deliveredSnapshot.empty;
+
+        const unsubscribeBilling = onSnapshot(billingItemsQuery, (billingSnapshot) => {
+          const billingItemsExists = !billingSnapshot.empty;
+
+          setIsBillPaidEnabled((deliveredItemsExists || orderItemsExists) && !billingItemsExists);
+        });
+
+        // Cleanup billing listener
+        return () => unsubscribeBilling();
+      });
+
+      // Cleanup delivered listener
+      return () => unsubscribeDelivered();
+    });
+
+    // Cleanup the order listener on unmount
+    return () => unsubscribeOrder();
   }, [params]);
 
   const handleSearchChange = (e) => {
@@ -100,7 +105,6 @@ const Header = ({ params }) => {
       };
 
       const billingCollection = collection(db, '1/billing/items');
-
       await addDoc(billingCollection, billingData);
 
       alert('Bill successfully paid!');

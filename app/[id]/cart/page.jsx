@@ -18,13 +18,13 @@ const Home = ({ params }) => {
   useEffect(() => {
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
-        (position) => {
+        position => {
           setLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
         },
-        (error) => {
+        error => {
           console.error("Error getting location:", error);
           setLocation("Location not available");
         },
@@ -55,7 +55,6 @@ const Home = ({ params }) => {
       };
 
       await addDoc(collection(db, '1/order/items'), orderData);
-
       dispatch({ type: 'CLEAR_CART' });
 
       setShowToast(true);
@@ -67,8 +66,8 @@ const Home = ({ params }) => {
     setLoading(false);
   };
 
-  const handleDelete = (id) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: { id } });
+  const handleDelete = (index) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: { index } }); // Use index for deletion
   };
 
   return (
@@ -84,14 +83,14 @@ const Home = ({ params }) => {
             </tr>
           </thead>
           <tbody>
-            {cart.map(item => (
-              <tr key={item.id}>
+            {cart.map((item, index) => (
+              <tr key={`${item.id}-${index}`}>
                 <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{item.name}</td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>{Number(item.price).toFixed(2)}</td>
                 <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #ddd' }}>
                   <FontAwesomeIcon
                     icon={faTrash}
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => handleDelete(index)} // Pass the index for deletion
                     style={{ cursor: 'pointer', color: '#dc3545' }}
                     title="Delete"
                   />
