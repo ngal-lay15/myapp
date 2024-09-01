@@ -46,6 +46,7 @@ const Home = ({ params }) => {
         table: params.id,
         location: location || "Unknown",
         orderlist: cart.map(item => ({
+          id: item.id,
           name: item.name,
           price: Number(item.price),
         })),

@@ -5,7 +5,7 @@ import Footer from '../components/Footer';
 import '../../globals.css'
 
 const Home = ({params}) => (
-  <div>
+  <div >
     <Header params={params.id} />
     <Footer />
   </div>
