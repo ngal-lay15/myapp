@@ -6,6 +6,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../firebaseConfig';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import food from '../../../img/food.png';
 
 const Home = ({ params }) => {
   const { cart, dispatch } = useCart();
@@ -13,7 +14,25 @@ const Home = ({ params }) => {
   const [location, setLocation] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
-  const totalPrice = cart.reduce((acc, item) => acc + Number(item.price), 0);
+  // Initialize takeaway state as an object with item IDs as keys
+  const [takeAway, setTakeAway] = useState(() => {
+    const initialState = {};
+    cart.forEach(item => {
+      initialState[item.id] = false;
+    });
+    return initialState;
+  });
+
+  // Initialize quantities state as an object with item IDs as keys
+  const [quantities, setQuantities] = useState(() => {
+    const initialQuantities = {};
+    cart.forEach(item => {
+      initialQuantities[item.id] = 1; // Start with quantity 1 for each item
+    });
+    return initialQuantities;
+  });
+
+  const totalPrice = cart.reduce((acc, item) => acc + Number(item.price) * (quantities[item.id] || 1), 0);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -39,6 +58,23 @@ const Home = ({ params }) => {
     }
   }, []);
 
+  const handleTakeawayChange = (id) => {
+    setTakeAway(prevState => ({
+      ...prevState,
+      [id]: !prevState[id]
+    }));
+  };
+
+  const handleQuantityChange = (id, change) => {
+    setQuantities(prevQuantities => {
+      const newQuantity = (prevQuantities[id] || 1) + change;
+      return {
+        ...prevQuantities,
+        [id]: Math.max(newQuantity, 1) // Ensure quantity is at least 1
+      };
+    });
+  };
+
   const handleSaveOrder = async () => {
     setLoading(true);
     try {
@@ -49,6 +85,8 @@ const Home = ({ params }) => {
           id: item.id,
           name: item.name,
           price: Number(item.price),
+          quantity: quantities[item.id] || 1, // Add quantity to order data
+          takeAway: takeAway[item.id] ? 1 : 0, // Set takeAway value based on the state
         })),
         totalPrice: totalPrice,
         createdAt: serverTimestamp(),
@@ -67,18 +105,20 @@ const Home = ({ params }) => {
   };
 
   const handleDelete = (index) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: { index } }); // Use index for deletion
+    dispatch({ type: 'REMOVE_ITEM', payload: { index } });
   };
 
   return (
     <div>
       <Header params={params.id} />
-      <main style={{marginTop:'70px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
+      <main style={{ marginTop: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
         <table style={{ width: '100%', maxWidth: '800px', borderCollapse: 'collapse', marginBottom: '20px' }}>
           <thead>
             <tr>
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Item Name</th>
               <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Price (Kyats)</th>
+              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Take Away</th>
+              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Quantity</th>
               <th style={{ textAlign: 'center', padding: '8px', borderBottom: '2px solid #ddd' }}>Action</th>
             </tr>
           </thead>
@@ -86,11 +126,36 @@ const Home = ({ params }) => {
             {cart.map((item, index) => (
               <tr key={`${item.id}-${index}`}>
                 <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{item.name}</td>
-                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>{Number(item.price).toFixed(2)}</td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  {Number(item.price).toFixed(2)}
+                </td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  <input
+                    type="checkbox"
+                    checked={takeAway[item.id] || false}
+                    onChange={() => handleTakeawayChange(item.id)}
+                  />
+                </td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  <button
+                    onClick={() => handleQuantityChange(item.id, -1)}
+                    disabled={quantities[item.id] <= 1}
+                    style={{ marginRight: '5px' }}
+                  >
+                    -
+                  </button>
+                  {quantities[item.id]}
+                  <button
+                    onClick={() => handleQuantityChange(item.id, 1)}
+                    style={{ marginLeft: '5px' }}
+                  >
+                    +
+                  </button>
+                </td>
                 <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #ddd' }}>
                   <FontAwesomeIcon
                     icon={faTrash}
-                    onClick={() => handleDelete(index)} // Pass the index for deletion
+                    onClick={() => handleDelete(index)}
                     style={{ cursor: 'pointer', color: '#dc3545' }}
                     title="Delete"
                   />
@@ -102,6 +167,7 @@ const Home = ({ params }) => {
             <tr>
               <td style={{ fontWeight: 'bold', padding: '8px', borderTop: '2px solid #ddd' }}>Total Price:</td>
               <td style={{ padding: '8px', borderTop: '2px solid #ddd', textAlign: 'right' }}>{totalPrice.toFixed(2)}</td>
+              <td></td>
               <td></td>
             </tr>
           </tfoot>

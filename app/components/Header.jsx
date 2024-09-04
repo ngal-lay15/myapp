@@ -124,13 +124,13 @@ const Header = ({ params }) => {
             </Link>
           </li>
 
-          <li className="left-section">
+          <li style={{fontSize:'10px'}} className="left-section">
             <Link className="nav-link" href={`/${params}/food`}>
               Food
             </Link>
           </li>
 
-          <li className="left-section">
+          <li style={{fontSize:'10px'}} className="left-section">
             <Link className="nav-link" href={`/${params}/drink`}>
               Drink
             </Link>
@@ -170,7 +170,7 @@ const Header = ({ params }) => {
               disabled={!isBillPaidEnabled}
               className={isBillPaidEnabled ? 'enabled' : 'disabled'}
             >
-              Pay Bill
+              ဘေရှင်းရန်
             </button>
           </li>
         </ul>

@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useCart } from '../../../CartContext';
 import { useEffect, useState } from "react";
 import { db } from "../../firebaseConfig";
-import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where,orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Custom hook to retrieve data from a subcollection with category filter
@@ -40,15 +40,19 @@ function useFirestoreSubcollection(parentCollection, parentId, subcollectionName
     } else {
       // Default query when no itemId is present
       const parentDocRef = doc(db, parentCollection, parentId); // Reference to the parent document
-      const subcollectionRef = collection(parentDocRef, subcollectionName); // Reference to the subcollection
+      const categorysubcollectionRef = collection(parentDocRef, subcollectionName); // Reference to the subcollection
+      const ordersubcollectionRef = collection(parentDocRef, subcollectionName); // Reference to the subcollection
+
 
       // Create a query to filter by category
-      const orderedQuery = query(
-        subcollectionRef,
+      const categoryQuery = query(
+        categorysubcollectionRef,
         where('category', '==', category) // Filter for category
       );
+      const orderedQuery = query(ordersubcollectionRef, orderBy('createdAt', 'desc'));
 
       unsubscribe = onSnapshot(
+        categoryQuery,
         orderedQuery,
         (snapshot) => {
           const fetchedData = snapshot.docs.map((doc) => ({
@@ -77,70 +81,97 @@ const Home = ({ params }) => {
     container: {
       display: 'flex',
       flexWrap: 'wrap',
-// Centering items
-      gap: '24px',
+      gap: '12px',
       marginTop: '80px',
-      padding: '0 20px', // Padding for responsiveness
+      justifyContent: 'center', // Center items horizontally
+      padding: '0 10px',
     },
     card: {
       border: '1px solid #eaeaea',
       borderRadius: '12px',
       overflow: 'hidden',
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', // Subtle shadow for depth
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
       transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
       textAlign: 'center',
       position: 'relative',
-      width: '260px',
+      width: 'calc(50% - 12px)', // Two cards per row with gap
+      maxWidth: '200px',
+      boxSizing: 'border-box',
+      flex: '1 1 calc(50% - 12px)', // Ensure the item takes 50% width or less
     },
     image: {
-      width: '200px',
-      height: '200px',
-      marginTop:'10px'
+      width: '100%',
+      height: '140px',
+      objectFit: 'cover',
     },
     info: {
-      padding: '5px',
+      padding: '8px',
     },
     title: {
-      fontSize: '18px',
+      fontSize: '16px',
       fontWeight: '600',
       color: '#333',
-      margin: '0 0 8px',
+      margin: '0 0 4px',
     },
     price: {
-      fontSize: '15px',
-      margin: '0 0 16px',
+      fontSize: '14px',
+      margin: '0 0 12px',
     },
     button: (stockStatus) => ({
-      padding: '5px 10px',
-      marginBottom:'10px',
-      backgroundColor: stockStatus === 'Off' ? '#999' : 'orange', // Gray for out of stock, green for available
+      padding: '4px 8px',
+      marginBottom: '8px',
+      backgroundColor: stockStatus === 'Off' ? '#999' : 'orange',
       color: 'white',
       border: 'none',
       borderRadius: '50px',
       cursor: stockStatus === 'Off' ? 'not-allowed' : 'pointer',
-      fontSize: '15px',
-      transition: 'background-color 0.3s ease', // Smooth transition for hover effect
+      fontSize: '14px',
+      transition: 'background-color 0.3s ease',
     }),
     buttonHover: (stockStatus) => ({
-      backgroundColor: stockStatus === 'Off' ? '#999' : '#218838', // Darker green on hover
+      backgroundColor: stockStatus === 'Off' ? '#999' : '#218838',
     }),
     newLabel: {
       position: 'absolute',
-      top: '10px',
-      left: '10px',
-      backgroundColor: '#FF5722', // Bright orange for "New" label
+      top: '8px',
+      left: '8px',
+      backgroundColor: '#FF0000',
       color: 'white',
-      padding: '4px 10px',
+      padding: '3px 8px',
       borderRadius: '20px',
       fontSize: '12px',
       fontWeight: '700',
     },
     cardHover: {
-      transform: 'translateY(-5px)', // Lift card on hover
-      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', // Stronger shadow on hover
+      transform: 'translateY(-5px)',
+      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+    },
+  
+    '@media (max-width: 768px)': {
+      container: {
+        justifyContent: 'center', // Center items horizontally
+        gap: '8px', // Reduced gap for mobile screens
+      },
+      card: {
+        width: 'calc(50% - 8px)', // Ensure cards are centered and take up 50% of the width
+        maxWidth: '140px',
+        flex: '1 1 calc(50% - 8px)', // Flex rule to ensure centering
+      },
+      image: {
+        height: '100px',
+      },
+      title: {
+        fontSize: '14px',
+      },
+      price: {
+        fontSize: '12px',
+      },
+      button: {
+        fontSize: '12px',
+      },
     },
   };
-
+  
   const { dispatch } = useCart();
   const searchParams = useSearchParams();
   const itemId = searchParams.get('id');
