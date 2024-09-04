@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { useCart } from '../../../CartContext';
@@ -6,6 +6,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../firebaseConfig';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import food from '../../../img/food.png';
 
 const Home = ({ params }) => {
   const { cart, dispatch } = useCart();
@@ -20,16 +21,9 @@ const Home = ({ params }) => {
     });
     return initialState;
   });
+  
 
-  const [quantities, setQuantities] = useState(() => {
-    const initialQuantities = {};
-    cart.forEach((_, index) => {
-      initialQuantities[index] = 1; // Start with quantity 1 for each item
-    });
-    return initialQuantities;
-  });
-
-  const totalPrice = cart.reduce((acc, item, index) => acc + Number(item.price) * (quantities[index] || 1), 0);
+  const totalPrice = cart.reduce((acc, item) => acc + Number(item.price), 0);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -61,16 +55,8 @@ const Home = ({ params }) => {
       [index]: !prevState[index]
     }));
   };
-
-  const handleQuantityChange = (index, change) => {
-    setQuantities(prevQuantities => {
-      const newQuantity = (prevQuantities[index] || 1) + change;
-      return {
-        ...prevQuantities,
-        [index]: Math.max(newQuantity, 1) // Ensure quantity is at least 1
-      };
-    });
-  };
+  
+  
 
   const handleSaveOrder = async () => {
     setLoading(true);
@@ -82,8 +68,7 @@ const Home = ({ params }) => {
           id: item.id,
           name: item.name,
           price: Number(item.price),
-          quantity: quantities[index], // Include quantity
-          takeAway: takeAway[index] ? 1 : 0, // Include takeaway
+          takeAway: takeAway[index] ? 1 : 0, // Use the index to get the takeAway value
         })),
         totalPrice: totalPrice,
         createdAt: serverTimestamp(),
@@ -101,7 +86,6 @@ const Home = ({ params }) => {
     setLoading(false);
   };
   
-
   const handleDelete = (index) => {
     dispatch({ type: 'REMOVE_ITEM', payload: { index } });
   };
@@ -116,7 +100,6 @@ const Home = ({ params }) => {
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Item Name</th>
               <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Price (Kyats)</th>
               <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Take Away</th>
-              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Quantity</th>
               <th style={{ textAlign: 'center', padding: '8px', borderBottom: '2px solid #ddd' }}>Action</th>
             </tr>
           </thead>
@@ -124,31 +107,13 @@ const Home = ({ params }) => {
             {cart.map((item, index) => (
               <tr key={`${item.id}-${index}`}>
                 <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{item.name}</td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>{Number(item.price).toFixed(2)}</td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
-                  {(Number(item.price) * (quantities[index] || 1)).toFixed(2)}
-                </td>
-                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
-                  <input
-                    type="checkbox"
-                    checked={takeAway[index] || false}
-                    onChange={() => handleTakeawayChange(index)}
-                  />
-                </td>
-                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
-                  <button
-                    onClick={() => handleQuantityChange(index, -1)}
-                    disabled={quantities[index] <= 1}
-                    style={{ marginRight: '5px' }}
-                  >
-                    -
-                  </button>
-                  {quantities[index]}
-                  <button
-                    onClick={() => handleQuantityChange(index, 1)}
-                    style={{ marginLeft: '5px' }}
-                  >
-                    +
-                  </button>
+                <input
+          type="checkbox"
+          checked={takeAway[index] || false}
+          onChange={() => handleTakeawayChange(index)}
+        />
                 </td>
                 <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #ddd' }}>
                   <FontAwesomeIcon
@@ -161,12 +126,10 @@ const Home = ({ params }) => {
               </tr>
             ))}
           </tbody>
-
           <tfoot>
             <tr>
               <td style={{ fontWeight: 'bold', padding: '8px', borderTop: '2px solid #ddd' }}>Total Price:</td>
               <td style={{ padding: '8px', borderTop: '2px solid #ddd', textAlign: 'right' }}>{totalPrice.toFixed(2)}</td>
-              <td></td>
               <td></td>
             </tr>
           </tfoot>
