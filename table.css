@@ -1,0 +1,93 @@
+/* globals.css */
+.container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Three columns */
+  gap: 20px;
+  width: 100%;
+}
+
+.table {
+  height: 120px; /* Fixed height for larger screens */
+  min-height: 100px; /* Minimum height for all screens */
+  min-width: 100px; /* Minimum width to ensure tables are not too narrow */
+  border: 2px solid #ff9800;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s, transform 0.2s;
+  background: white; /* Card background */
+}
+
+/* Card hover effect */
+.table:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.table img {
+  width: 60px;
+  height: 60px;
+}
+
+.table.selected {
+  background-color: skyblue;
+}
+
+.table.booked {
+  background-color: red;
+}
+
+.start-time {
+  margin-top: 20px;
+}
+
+.start-time input {
+  padding: 5px;
+  border: 1px solid #ff9800;
+  border-radius: 4px;
+}
+
+.book-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Media Queries */
+@media (max-width: 900px) {
+  .table-grid {
+      grid-template-columns: repeat(2, 1fr); /* Two columns on smaller screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .table {
+      height: auto; /* Allow height to adjust based on content */
+      min-height: 100px; /* Keep minimum height for mobile */
+      font-size: 16px; /* Adjust font size */
+  }
+
+  .book-button {
+      padding: 8px 16px;
+      font-size: 14px;
+  }
+}

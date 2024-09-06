@@ -3,39 +3,105 @@ import Link from 'next/link';
 import logo from '../../img/logo.png';
 import cartimg from '../../img/cart.png';
 import { useCart } from '../../CartContext';
-import { collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+} from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useRouter } from 'next/navigation';
+
+const Modal = ({ isOpen, onClose, message }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h6>ဘေပေးဆောင်ရန် အတွက် request လုပ်ပြီးဖြစ်ပါသည်။အားပေးမှုအတွက် အထူးကျေးဇူးတင်ပါသည် ခင်ဗျာ။</h6>
+        <button onClick={onClose}>Close</button>
+      </div>
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1001;
+        }
+        .modal-content {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          text-align: center;
+          width: 300px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+          background: orange;
+          border: none;
+          color: white;
+          padding: 10px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const Header = ({ params }) => {
   const { cart } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredItems, setFilteredItems] = useState([]);
   const [items, setItems] = useState([]);
+  const [foodSubcategories, setFoodSubcategories] = useState([]);
+  const [drinkSubcategories, setDrinkSubcategories] = useState([]);
   const [isBillPaidEnabled, setIsBillPaidEnabled] = useState(false);
+  const [showFoodSubmenu, setShowFoodSubmenu] = useState(false);
+  const [showDrinkSubmenu, setShowDrinkSubmenu] = useState(false);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
   const router = useRouter();
 
-  // Fetch items on mount
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const itemsCollection = collection(db, '1/products/items');
         const itemsSnapshot = await getDocs(itemsCollection);
-        const itemsList = itemsSnapshot.docs.map(doc => ({
+        const itemsList = itemsSnapshot.docs.map((doc) => ({
           name: doc.data().name,
           id: doc.id,
-          category: doc.data().category
+          category: doc.data().category,
+          subcategory: doc.data().subcategory,
         }));
         setItems(itemsList);
+
+        const foodItems = itemsList.filter(item => item.category === 'Food');
+        const uniqueFoodSubcategories = [...new Set(foodItems.map(item => item.subcategory))];
+        setFoodSubcategories(uniqueFoodSubcategories);
+
+        const drinkItems = itemsList.filter(item => item.category === 'Drink');
+        const uniqueDrinkSubcategories = [...new Set(drinkItems.map(item => item.subcategory))];
+        setDrinkSubcategories(uniqueDrinkSubcategories);
+
       } catch (error) {
-        console.error("Error fetching items: ", error);
+        console.error('Error fetching items: ', error);
       }
     };
 
     fetchItems();
   }, []);
 
-  // Check bill status in real-time
   useEffect(() => {
     const orderItemsCollection = collection(db, '1/order/items');
     const orderItemsQuery = query(orderItemsCollection, where('table', '==', params));
@@ -58,15 +124,12 @@ const Header = ({ params }) => {
           setIsBillPaidEnabled((deliveredItemsExists || orderItemsExists) && !billingItemsExists);
         });
 
-        // Cleanup billing listener
         return () => unsubscribeBilling();
       });
 
-      // Cleanup delivered listener
       return () => unsubscribeDelivered();
     });
 
-    // Cleanup the order listener on unmount
     return () => unsubscribeOrder();
   }, [params]);
 
@@ -107,11 +170,34 @@ const Header = ({ params }) => {
       const billingCollection = collection(db, '1/billing/items');
       await addDoc(billingCollection, billingData);
 
-      alert('Bill successfully paid!');
+      setModalMessage('Bill successfully paid!');
       setIsBillPaidEnabled(false);
     } catch (error) {
+      setModalMessage('Error paying bill. Please try again.');
       console.error('Error paying bill: ', error);
     }
+    setIsModalOpen(true);
+  };
+
+  const toggleFoodSubmenu = () => {
+    setShowFoodSubmenu(!showFoodSubmenu);
+    setShowDrinkSubmenu(false);
+  };
+
+  const toggleDrinkSubmenu = () => {
+    setShowDrinkSubmenu(!showDrinkSubmenu);
+    setShowFoodSubmenu(false);
+  };
+
+  const handleSubmenuItemClick = (subcategory, category) => {
+    setSelectedSubcategory(subcategory);
+    if (category === 'Food') {
+      router.push(`/${params}/food/${subcategory}`);
+    } else if (category === 'Drink') {
+      router.push(`/${params}/drink/${subcategory}`);
+    }
+    setShowFoodSubmenu(false);
+    setShowDrinkSubmenu(false);
   };
 
   return (
@@ -124,16 +210,34 @@ const Header = ({ params }) => {
             </Link>
           </li>
 
-          <li style={{fontSize:'10px'}} className="left-section">
-            <Link className="nav-link" href={`/${params}/food`}>
-              Food
-            </Link>
+          <li style={{ fontSize: '10px' }} className="left-section food-menu">
+            <span onClick={toggleFoodSubmenu} className="nav-link">
+              Food 
+            </span>
+            {showFoodSubmenu && (
+              <ul className="submenu">
+                {foodSubcategories.map((subcategory, index) => (
+                  <li key={index} onClick={() => handleSubmenuItemClick(subcategory, 'Food')}>
+                    {subcategory}
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
 
-          <li style={{fontSize:'10px'}} className="left-section">
-            <Link className="nav-link" href={`/${params}/drink`}>
-              Drink
-            </Link>
+          <li style={{ fontSize: '10px' }} className="left-section">
+            <span onClick={toggleDrinkSubmenu} className="nav-link">
+              Drink 
+            </span>
+            {showDrinkSubmenu && (
+              <ul className="submenu">
+                {drinkSubcategories.map((subcategory, index) => (
+                  <li key={index} onClick={() => handleSubmenuItemClick(subcategory, 'Drink')}>
+                    {subcategory}
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
 
           <li className="search-section">
@@ -165,8 +269,8 @@ const Header = ({ params }) => {
           </li>
 
           <li className="right-section bill-paid">
-            <button 
-              onClick={handlePayBill} 
+            <button
+              onClick={handlePayBill}
               disabled={!isBillPaidEnabled}
               className={isBillPaidEnabled ? 'enabled' : 'disabled'}
             >
@@ -175,7 +279,8 @@ const Header = ({ params }) => {
           </li>
         </ul>
       </nav>
-
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} message={modalMessage} />
+        
       <style jsx>{`
         header {
           position: fixed;
@@ -204,10 +309,39 @@ const Header = ({ params }) => {
           color: #333;
           text-decoration: none;
           font-size: 0.75rem;
+          cursor: pointer;
         }
         .left-section {
           display: flex;
           align-items: center;
+        }
+        .food-menu {
+          z-index: 100;
+        }
+        .submenu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          width: 200px;
+          background: white;
+          border: 1px solid orange;
+          border-radius: 4px;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          z-index: 9999;
+        }
+        .submenu li {
+          padding: 0.75rem;
+          cursor: pointer;
+          border-bottom: 1px solid orange;
+          text-align: left;
+          display: block;
+          width: 100%;
+        }
+        .submenu li:hover {
+          background-color: orange;
+          color: white;
         }
         .search-section {
           flex-grow: 1;
@@ -230,21 +364,20 @@ const Header = ({ params }) => {
           background-color: white;
           border: 1px solid orange;
           border-radius: 4px;
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-          gap: 0.5rem;
+          display: block;
           top: 100%;
           left: 0;
           right: 0;
           z-index: 1000;
         }
         .dropdown li {
-          padding: 0.5rem;
+          padding: 0.75rem;
           cursor: pointer;
           background-color: #fff;
           border: 1px solid orange;
           border-radius: 4px;
-          text-align: center;
+          text-align: left;
+          display: block;
         }
         .dropdown li:hover {
           background-color: orange;
@@ -295,7 +428,6 @@ const Header = ({ params }) => {
           opacity: 0.5;
           cursor: not-allowed;
         }
-
         @media (max-width: 768px) {
           nav ul {
             overflow-x: auto;

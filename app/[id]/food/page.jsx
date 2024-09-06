@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { db } from "../../firebaseConfig";
 import { collection, doc, onSnapshot, query, where,orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from 'next/navigation';
+import CircularProgress from '@mui/material/CircularProgress';
+
 
 // Custom hook to retrieve data from a subcollection with category filter
 function useFirestoreSubcollection(parentCollection, parentId, subcollectionName, category, itemId) {
@@ -83,8 +85,11 @@ const Home = ({ params }) => {
       flexWrap: 'wrap',
       gap: '12px',
       marginTop: '80px',
-      justifyContent: 'center', // Center items horizontally
+      justifyContent: 'left', // Center items horizontally
       padding: '0 10px',
+      width:'90%',
+      // backgroundColor:'blue',
+      margin:'0 auto'
     },
     card: {
       border: '1px solid #eaeaea',
@@ -129,7 +134,10 @@ const Home = ({ params }) => {
       transition: 'background-color 0.3s ease',
     }),
     buttonHover: (stockStatus) => ({
-      backgroundColor: stockStatus === 'Off' ? '#999' : '#218838',
+      backgroundColor: stockStatus === 'Off' ? '#999' : '#ffffff',
+      color: 'black',
+      border: '1px solid orange',
+
     }),
     newLabel: {
       position: 'absolute',
@@ -186,9 +194,12 @@ const Home = ({ params }) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </div>
+    );
   }
-
   if (error) {
     return <div>Error: {error}</div>;
   }

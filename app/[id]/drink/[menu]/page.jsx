@@ -1,19 +1,19 @@
 "use client";
 
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import logo from '../../../img/logo.png';
-import '../../../globals.css';
+import Header from '../../../components/Header';
+import Footer from '../../../components/Footer';
+import logo from '../../../../img/logo.png';
+import '../../../../globals.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useCart } from '../../../CartContext';
+import { useCart } from '../../../../CartContext';
 import { useEffect, useState } from "react";
-import { db } from "../../firebaseConfig";
+import { db } from "../../../firebaseConfig";
 import { collection, doc, onSnapshot, query, where,orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from 'next/navigation';
 import CircularProgress from '@mui/material/CircularProgress';
 
 // Custom hook to retrieve data from a subcollection with category filter
-function useFirestoreSubcollection(parentCollection, parentId, subcollectionName, category, itemId) {
+function useFirestoreSubcollection(parentCollection, parentId, subcollectionName, subcategory, itemId) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,9 +48,9 @@ function useFirestoreSubcollection(parentCollection, parentId, subcollectionName
       // Create a query to filter by category
       const categoryQuery = query(
         categorysubcollectionRef,
-        where('category', '==', category) // Filter for category
+        where('subcategory', '==', subcategory) // Filter for category
       );
-      const orderedQuery = query(ordersubcollectionRef, orderBy('createdAt', 'desc'));
+      const orderedQuery = query(ordersubcollectionRef, orderBy('createdAt', 'asc'));
 
       unsubscribe = onSnapshot(
         categoryQuery,
@@ -72,7 +72,7 @@ function useFirestoreSubcollection(parentCollection, parentId, subcollectionName
 
     // Cleanup listener on unmount
     return () => unsubscribe && unsubscribe();
-  }, [parentCollection, parentId, subcollectionName, category, itemId]);
+  }, [parentCollection, parentId, subcollectionName, subcategory, itemId]);
 
   return { data, loading, error };
 }
@@ -176,12 +176,14 @@ const Home = ({ params }) => {
     },
   };
   
+  
+  
   const { dispatch } = useCart();
   const searchParams = useSearchParams();
   const itemId = searchParams.get('id');
 
   // Use the updated hook with itemId check
-  const { data: itemData, loading, error } = useFirestoreSubcollection("1", "products", "items", "Drink", itemId);
+  const { data: itemData, loading, error } = useFirestoreSubcollection("1", "products", "items", params.menu, itemId);
 
   const addToCart = (item) => {
     dispatch({ type: 'ADD_ITEM', payload: item });
@@ -198,19 +200,14 @@ const Home = ({ params }) => {
     return <div>Error: {error}</div>;
   }
 
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
   return (
     <div>
       <Header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1000 }} params={params.id} />
       <main style={{ marginTop: '70px' }}>
+       
         <div style={styles.container}>
           {itemData.map((item) => {
             const isNew = item.createdAt && (new Date() - new Date(item.createdAt.toDate ? item.createdAt.toDate() : item.createdAt)) <= 3600000;
-
             return (
               <div
                 key={item.id}
@@ -247,6 +244,7 @@ const Home = ({ params }) => {
             );
           })}
         </div>
+        
       </main>
     </div>
   );
