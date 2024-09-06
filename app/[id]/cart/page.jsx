@@ -169,9 +169,10 @@ const checkLocation = (itemLocation) => {
     if (params.id == 0) {
         setShowAlert(true); // Show alert box for phone and address
     } else {
-        if (checkLocation(location)) {
+        if (!checkLocation(location)) {
             await saveOrder();
         } else {
+            // alert(JSON.stringify(specialLocationPolygon))
             setShowModal(true); // Show modal for outside location
         }
     }
@@ -223,87 +224,68 @@ const saveOrder = async () => {
     <div>
       <Header params={params.id} />
       <main style={{ marginTop: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
-      <table style={{ width: '100%', maxWidth: '800px', borderCollapse: 'collapse', marginBottom: '20px', fontFamily: 'Arial, sans-serif' }}>
-  <thead>
-    <tr>
-      <th style={{ textAlign: 'left', padding: '10px', borderBottom: '3px solid #0066cc', backgroundColor: '#e6f2ff', color: '#003366' }}>Item Name</th>
-      <th style={{ textAlign: 'right', padding: '10px', borderBottom: '3px solid #0066cc', backgroundColor: '#e6f2ff', color: '#003366' }}>Price (Kyats)</th>
-      <th style={{ textAlign: 'right', padding: '10px', borderBottom: '3px solid #0066cc', backgroundColor: '#e6f2ff', color: '#003366' }}>Take Away</th>
-      <th style={{ textAlign: 'right', padding: '10px', borderBottom: '3px solid #0066cc', backgroundColor: '#e6f2ff', color: '#003366' }}>Quantity</th>
-      <th style={{ textAlign: 'center', padding: '10px', borderBottom: '3px solid #0066cc', backgroundColor: '#e6f2ff', color: '#003366' }}>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    {cart.map((item, index) => (
-      <tr key={`${item.id}-${index}`} style={{ backgroundColor: index % 2 === 0 ? '#f2f9ff' : '#ffffff' }}>
-        <td style={{ padding: '10px', borderBottom: '1px solid #cce0ff', color: '#003366' }}>{item.name}</td>
-        <td style={{ padding: '10px', borderBottom: '1px solid #cce0ff', textAlign: 'right', color: '#003366' }}>
-          {(Number(item.price) * (quantities[index] || 1)).toFixed(2)}
-        </td>
-        <td style={{ padding: '10px', borderBottom: '1px solid #cce0ff', textAlign: 'right' }}>
-          <input
-            type="checkbox"
-            checked={takeAway[index] || false}
-            onChange={() => handleTakeawayChange(index)}
-          />
-        </td>
-        <td style={{ padding: '10px', borderBottom: '1px solid #cce0ff', textAlign: 'right' }}>
-          <button
-            onClick={() => handleQuantityChange(index, -1)}
-            disabled={quantities[index] <= 1}
-            style={{ marginRight: '5px', backgroundColor: '#0066cc', color: 'white', border: 'none', padding: '5px', borderRadius: '3px', cursor: 'pointer' }}
-          >
-            -
-          </button>
-          {quantities[index]}
-          <button
-            onClick={() => handleQuantityChange(index, 1)}
-            style={{ marginLeft: '5px', backgroundColor: '#0066cc', color: 'white', border: 'none', padding: '5px', borderRadius: '3px', cursor: 'pointer' }}
-          >
-            +
-          </button>
-        </td>
-        <td style={{ textAlign: 'center', padding: '10px', borderBottom: '1px solid #cce0ff' }}>
-          <FontAwesomeIcon
-            icon={faTrash}
-            onClick={() => handleDelete(index)}
-            style={{ cursor: 'pointer', color: '#dc3545' }}
-            title="Delete"
-          />
-        </td>
-      </tr>
-    ))}
-  </tbody>
+        <table style={{ width: '100%', maxWidth: '800px', borderCollapse: 'collapse', marginBottom: '20px' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Item Name</th>
+              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Price (Kyats)</th>
+              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Take Away</th>
+              <th style={{ textAlign: 'right', padding: '8px', borderBottom: '2px solid #ddd' }}>Quantity</th>
+              <th style={{ textAlign: 'center', padding: '8px', borderBottom: '2px solid #ddd' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cart.map((item, index) => (
+              <tr key={`${item.id}-${index}`}>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{item.name}</td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  {(Number(item.price) * (quantities[index] || 1)).toFixed(2)}
+                </td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  <input
+                    type="checkbox"
+                    checked={takeAway[index] || false}
+                    onChange={() => handleTakeawayChange(index)}
+                  />
+                </td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #ddd', textAlign: 'right' }}>
+                  <button
+                    onClick={() => handleQuantityChange(index, -1)}
+                    disabled={quantities[index] <= 1}
+                    style={{ marginRight: '5px' }}
+                  >
+                    -
+                  </button>
+                  {quantities[index]}
+                  <button
+                    onClick={() => handleQuantityChange(index, 1)}
+                    style={{ marginLeft: '5px' }}
+                  >
+                    +
+                  </button>
+                </td>
+                <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #ddd' }}>
+                  <FontAwesomeIcon
+                    icon={faTrash}
+                    onClick={() => handleDelete(index)}
+                    style={{ cursor: 'pointer', color: '#dc3545' }}
+                    title="Delete"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
 
-  <tfoot>
-    <tr>
-      <td style={{ fontWeight: 'bold', padding: '10px', borderTop: '3px solid #0066cc', color: '#003366' }}>Total Price:</td>
-      <td style={{ padding: '10px', borderTop: '3px solid #0066cc', textAlign: 'right', color: '#003366' }}>{totalPrice.toFixed(2)}</td>
-      <td></td>
-      <td></td>
-    </tr>
-  </tfoot>
+          <tfoot>
+            <tr>
+              <td style={{ fontWeight: 'bold', padding: '8px', borderTop: '2px solid #ddd' }}>Total Price:</td>
+              <td style={{ padding: '8px', borderTop: '2px solid #ddd', textAlign: 'right' }}>{totalPrice.toFixed(2)}</td>
+              <td></td>
 
-  {/* Responsive Styles */}
-  <style jsx>{`
-    @media only screen and (max-width: 600px) {
-      table {
-        font-size: 14px;
-      }
-      th, td {
-        padding: 6px;
-      }
-      button {
-        padding: 3px 8px;
-        font-size: 12px;
-      }
-      input[type="checkbox"] {
-        transform: scale(0.8);
-      }
-    }
-  `}</style>
-</table>
-
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
 
         <button
           onClick={handleSaveOrder}
